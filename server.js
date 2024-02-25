@@ -44,7 +44,7 @@ app.post("/api/login", (req, res) => {
       let token = jwt.sign(
         { id: user.id, username: user.username },
         secretKey,
-        { expiresIn: "7d" }
+        { expiresIn: "3m" }
       );
       res.json({
         success: true,
@@ -73,6 +73,14 @@ app.get("/api/prices", jwtMW, (req, res) => {
   res.json({
     success: true,
     myContent: "This is the price $3.99",
+  });
+});
+
+app.get("/api/settings", jwtMW, (req, res) => {
+  res.json({
+    success: true,
+    myContent:
+      "Secret content on the settings page that only logged in people can see!!!",
   });
 });
 

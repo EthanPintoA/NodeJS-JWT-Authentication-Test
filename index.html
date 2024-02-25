@@ -34,6 +34,7 @@
         <div class="row">
           <button onclick="login()">Login</button>
           <button onclick="getDashboard()">Get Dashboard</button>
+          <button onclick="getSettings()">Get Settings</button>
         </div>
       </main>
     </div>
@@ -62,6 +63,17 @@
 
       function getDashboard() {
         const token = localStorage.getItem("jwt");
+
+        if (!token) {
+          return;
+        }
+
+        if (didTokenExpire(token)) {
+          localStorage.removeItem("jwt");
+          window.location.assign("/");
+          return;
+        }
+
         axios
           .get("/api/dashboard", {
             headers: {
@@ -70,7 +82,45 @@
           })
           .then((res) => {
             if (res && res.data && res.data.success) {
+              history.pushState({}, "", "/dashboard");
+
               document.querySelector("h1.row").innerText = "Dashboard";
+              document.querySelector("main").innerHTML = res.data.myContent;
+
+              const btnDiv = document.createElement("div");
+              btnDiv.className = "row";
+
+              btnDiv.innerHTML = `<button onclick="getSettings()">Get Settings</button>`;
+
+              document.querySelector("main").appendChild(btnDiv);
+            }
+          });
+      }
+
+      function getSettings() {
+        const token = localStorage.getItem("jwt");
+
+        if (!token) {
+          return;
+        }
+
+        if (didTokenExpire(token)) {
+          localStorage.removeItem("jwt");
+          window.location.assign("/");
+          return;
+        }
+
+        axios
+          .get("/api/settings", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((res) => {
+            if (res && res.data && res.data.success) {
+              history.pushState({}, "", "/settings");
+
+              document.querySelector("h1.row").innerText = "Settings";
               document.querySelector("main").innerHTML = res.data.myContent;
             }
           });
@@ -78,9 +128,25 @@
 
       function onLoad() {
         const token = localStorage.getItem("jwt");
-        if (token) {
+        if (token && !didTokenExpire(token)) {
           getDashboard();
+        } else if (token && didTokenExpire(token)) {
+          localStorage.removeItem("jwt");
         }
+      }
+
+      function didTokenExpire(token) {
+        if (!token) {
+          return true;
+        }
+
+        const tokenData = token.split(".")[1];
+        const decodedToken = atob(tokenData);
+        const parsedToken = JSON.parse(decodedToken);
+        const exp = parsedToken.exp;
+        const now = Date.now() / 1000; // convert to seconds
+
+        return now > exp;
       }
 
       onLoad();
